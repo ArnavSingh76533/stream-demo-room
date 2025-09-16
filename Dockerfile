@@ -2,7 +2,7 @@
 FROM node:21.0-alpine AS deps
 WORKDIR /app
 
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+# libc6-compat helps some native deps
 RUN apk add --no-cache libc6-compat
 
 COPY package.json yarn.lock ./
@@ -16,15 +16,20 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN yarn build
 
-# Production image, copy all the files and run next
+# Production image, copy all the files and run Next.js
 FROM node:21.0-alpine AS runner
 WORKDIR /app
 
+# Default envs (override in Space settings)
 ENV SITE_NAME="Web-SyncPlay"
+# Set this in Space settings to your Space URL, e.g. https://your-username-web-syncplay.hf.space
 ENV PUBLIC_DOMAIN="https://web-syncplay.de"
+# Use a managed Redis URL (e.g. Upstash) set in Space settings
 ENV REDIS_URL="redis://redis:6379"
 
-EXPOSE 3000
+# Hugging Face Spaces expects your app to listen on $PORT (default 7860)
+ENV PORT=7860
+EXPOSE 7860
 
 LABEL org.opencontainers.image.url="https://web-syncplay.de" \
       org.opencontainers.image.description="Watch videos or play music in sync with your friends" \
@@ -37,25 +42,13 @@ RUN addgroup -g 1001 -S nodejs && \
     curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && \
     chmod a+rx /usr/local/bin/yt-dlp
 
-# You only need to copy next.config.js if you are NOT using the default configuration
-# COPY --from=builder /app/next.config.js ./
+# Static assets and standalone output
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
-EXPOSE 8081
-
-ENV PORT 8081
-
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry.
-# ENV NEXT_TELEMETRY_DISABLED 1
-
+# Next.js will pick up PORT env var
 CMD ["sh", "-c", "node server.js"]
