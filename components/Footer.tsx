@@ -14,7 +14,7 @@ const Footer: FC<Props> = ({ error }) => {
       <div className={"text-sm flex flex-col gap-1 sm:flex-row sm:items-center"}>
         <div className={"flex flex-row items-center"}>
           <IconCopyright sizeClassName={"h-3 w-3"}/>
-          <NewTabLink href={"https://github.com/Yasamato"}>Yasamato</NewTabLink>
+          <NewTabLink href={"t.me/yucant"}>Charlie</NewTabLink>
           2022,
         </div>
 
@@ -27,7 +27,7 @@ const Footer: FC<Props> = ({ error }) => {
 
         <NewTabLink
           className={"ml-auto flex items-center"}
-          href={"https://github.com/Web-SyncPlay/Web-SyncPlay"}
+          href={"shivam413-Streamer.hf.space"}
         >
           <IconGithub className={"mr-1"} /> Github
         </NewTabLink>
