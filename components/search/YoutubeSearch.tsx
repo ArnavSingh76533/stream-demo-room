@@ -38,7 +38,6 @@ async function searchViaServer(q: string, limit = 8): Promise<Result[] | null> {
 }
 
 async function searchViaPipedClient(q: string, limit = 8): Promise<Result[] | null> {
-  // Browser → public Piped instances to bypass server DNS issues
   const instances = [
     "https://pipedapi.kavin.rocks",
     "https://piped.video",
@@ -74,6 +73,9 @@ async function searchViaPipedClient(q: string, limit = 8): Promise<Result[] | nu
   return null
 }
 
+const ACTION_BTN_WIDTH = "w-20" // keeps Search/Play column aligned
+const ADD_BTN_WIDTH = "w-14" // smaller 'Add' button
+
 const YoutubeSearch: FC<Props> = ({ socket }) => {
   const [q, setQ] = useState("")
   const [loading, setLoading] = useState(false)
@@ -87,10 +89,7 @@ const YoutubeSearch: FC<Props> = ({ socket }) => {
     setError(null)
     setResults([])
 
-    // 1) Try server endpoint (YT API key or Piped server-side)
     let found: Result[] | null = await searchViaServer(query, 8)
-
-    // 2) Fallback: Browser → Piped directly (bypasses server DNS)
     if (!found || found.length === 0) {
       found = await searchViaPipedClient(query, 8)
     }
@@ -103,19 +102,26 @@ const YoutubeSearch: FC<Props> = ({ socket }) => {
     setLoading(false)
   }
 
+  const playNow = (url: string) => socket?.emit("playUrl", url)
+  const addToPlaylist = (url: string) => socket?.emit("addToPlaylist", url)
+
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-2">
+      {/* Search row: input + Search button with fixed width so actions align below */}
+      <div className="grid grid-cols-[1fr_auto] gap-2">
         <input
-          className="input flex-1 bg-neutral-800 p-2 rounded-md outline-none"
-          placeholder="Search YouTube (e.g., titanium sia)"
+          className="input bg-neutral-800 p-2 rounded-md outline-none"
+          placeholder="Search YouTube (e.g., Sira)"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") search()
           }}
         />
-        <button onClick={search} className="btn bg-primary-700 hover:bg-primary-600 px-3 rounded-md">
+        <button
+          onClick={search}
+          className={`btn bg-primary-700 hover:bg-primary-600 px-3 rounded-md justify-center ${ACTION_BTN_WIDTH}`}
+        >
           {loading ? "Searching…" : "Search"}
         </button>
       </div>
@@ -124,18 +130,38 @@ const YoutubeSearch: FC<Props> = ({ socket }) => {
 
       <div className="grid gap-2">
         {results.map((r) => (
-          <div key={r.id} className="flex items-center gap-3 p-2 rounded-md border">
-            {r.thumbnails?.[0]?.url && (
+          <div
+            key={r.id}
+            className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 p-2 rounded-md border"
+          >
+            {/* Thumb */}
+            {r.thumbnails?.[0]?.url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={r.thumbnails[0].url} alt="" className="w-16 h-9 object-cover rounded-sm" />
+            ) : (
+              <div className="w-16 h-9 bg-neutral-800 rounded-sm" />
             )}
-            <div className="flex-1 overflow-hidden">
+
+            {/* Info */}
+            <div className="min-w-0">
               <div className="truncate">{r.title}</div>
               <div className="opacity-60 text-xs truncate">{r.url}</div>
             </div>
+
+            {/* Add (small) */}
             <button
-              className="btn bg-primary-800 hover:bg-primary-700 px-3 rounded-md"
-              onClick={() => socket?.emit("playUrl", r.url)}
+              className={`btn bg-blue-700 hover:bg-blue-600 px-2 py-1 rounded-md text-xs justify-center ${ADD_BTN_WIDTH}`}
+              onClick={() => addToPlaylist(r.url)}
+              title="Add to playlist"
+            >
+              Add
+            </button>
+
+            {/* Play (aligned under Search button) */}
+            <button
+              className={`btn bg-green-700 hover:bg-green-600 px-3 py-1 rounded-md justify-center ${ACTION_BTN_WIDTH}`}
+              onClick={() => playNow(r.url)}
+              title="Play now"
             >
               Play
             </button>
