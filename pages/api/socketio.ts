@@ -309,6 +309,25 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
           await broadcast(room)
         })
 
+        // Add a URL to playlist without immediate playback
+        socket.on("addToPlaylist", async (url) => {
+          const room = await getRoom(roomId)
+          if (room === null) {
+            throw new Error(
+              "Impossible non existing room, cannot add to playlist:" + roomId
+            )
+          }
+          if (!isUrl(url)) return log("addToPlaylist invalid url", url)
+          log("add to playlist", url)
+
+          room.targetState.playlist.items.push({
+            src: [{ src: url, resolution: "" }],
+            sub: [],
+          })
+
+          await broadcast(room)
+        })
+
         socket.on("fetch", async () => {
           const room = await getRoom(roomId)
           if (room === null) {
