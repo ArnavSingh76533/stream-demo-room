@@ -8,9 +8,13 @@ import {
 } from "./types"
 import io, { Socket } from "socket.io-client"
 
+// Events the server emits to the client
 export interface ServerToClientEvents {
+  // Optional legacy granular updates (your server mainly emits `update`)
   playlistUpdate: (playlist: Playlist) => void
   userUpdates: (users: UserState[]) => void
+
+  // Primary room update payload
   update: (room: RoomState) => void
 
   // Chat events
@@ -18,50 +22,52 @@ export interface ServerToClientEvents {
   chatHistory: (msgs: ChatMessage[]) => void
 }
 
+// Events the client emits to the server
 export interface ClientToServerEvents {
+  // Playlist and user updates
   playItemFromPlaylist: (index: number) => void
   updatePlaylist: (playlist: Playlist) => void
   updatePlayer: (player: PlayerState) => void
   updatePlaying: (playing: MediaElement) => void
   updateUser: (user: UserState) => void
 
+  // Player controls
   setPaused: (paused: boolean) => void
   setLoop: (loop: boolean) => void
   setProgress: (progress: number) => void
   setPlaybackRate: (playbackRate: number) => void
-
   seek: (progress: number) => void
+
+  // Playback and fetching
   playUrl: (src: string) => void
+  addToPlaylist: (url: string) => void // NEW: add without playing
   playAgain: () => void
   playEnded: () => void
   fetch: () => void
   error: () => void
 
-  // Chat: client -> server
+  // Chat
   chatMessage: (text: string) => void
 }
 
+export type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>
+
 export function playItemFromPlaylist(
-  socket: Socket<ServerToClientEvents, ClientToServerEvents>,
+  socket: TypedSocket,
   playlist: Playlist,
   index: number
 ) {
-  if (
-    typeof playlist.items[index] === "undefined" ||
-    playlist.items[index] === null
-  ) {
+  if (!playlist || !Array.isArray(playlist.items) || !playlist.items[index]) {
     console.error("Impossible to play", index, "from", playlist)
     return
   }
   socket.emit("playItemFromPlaylist", index)
 }
 
-export function createClientSocket(roomId: string) {
+export function createClientSocket(roomId: string): TypedSocket {
   console.log("Trying to join room", roomId)
-  const socket = io({
-    query: {
-      roomId,
-    },
+  const socket: TypedSocket = io({
+    query: { roomId },
     transports: ["websocket"],
     path: "/api/socketio",
   })
@@ -82,4 +88,13 @@ export function createClientSocket(roomId: string) {
   })
 
   return socket
+}
+
+// Convenience helpers
+export function playNow(socket: TypedSocket, url: string) {
+  socket.emit("playUrl", url)
+}
+
+export function queueUrl(socket: TypedSocket, url: string) {
+  socket.emit("addToPlaylist", url)
 }
