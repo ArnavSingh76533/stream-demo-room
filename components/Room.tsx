@@ -13,6 +13,8 @@ import PlaylistMenu from "./playlist/PlaylistMenu"
 import IconLoop from "./icon/IconLoop"
 import InputUrl from "./input/InputUrl"
 import UserList from "./user/UserList"
+import ChatPanel from "./chat/ChatPanel"
+import YoutubeSearch from "./search/YoutubeSearch"
 
 interface Props {
   id: string
@@ -100,6 +102,12 @@ const Room: FC<Props> = ({ id }) => {
           >
             Play
           </InputUrl>
+        </div>
+
+        {/* Chat + YouTube Search */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-1">
+          <ChatPanel socket={socket} />
+          <YoutubeSearch socket={socket} />
         </div>
 
         <UserList socket={socket} />
