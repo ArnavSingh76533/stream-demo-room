@@ -1,15 +1,16 @@
 # Install dependencies only when needed
-FROM node:21.0-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 # libc6-compat helps some native deps
 RUN apk add --no-cache libc6-compat
 
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+# Remove --frozen-lockfile to allow resolving when the lock is out of sync on HF
+RUN yarn install
 
 # Rebuild the source code only when needed
-FROM node:21.0-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -17,7 +18,7 @@ COPY . .
 RUN yarn build
 
 # Production image, copy all the files and run Next.js
-FROM node:21.0-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
