@@ -1,5 +1,6 @@
 "use client"
 import React, { FC, useEffect, useRef, useState, useCallback } from "react"
+import Hls from "hls.js"
 
 interface Html5VideoPlayerProps {
   url: string
@@ -50,7 +51,7 @@ const Html5VideoPlayer: FC<Html5VideoPlayerProps> = ({
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const seekingRef = useRef(false)
   const lastSeekToRef = useRef<number | undefined>(undefined)
-  const hlsRef = useRef<any>(null)
+  const hlsRef = useRef<Hls | null>(null)
 
   // Handle PiP state
   useEffect(() => {
@@ -92,15 +93,15 @@ const Html5VideoPlayer: FC<Html5VideoPlayerProps> = ({
         // Try native HLS support first (Safari)
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = url
-        } else if ((window as any).Hls && (window as any).Hls.isSupported()) {
+        } else if (Hls.isSupported()) {
           // Use hls.js for browsers that don't support native HLS
-          const hls = new (window as any).Hls()
+          const hls = new Hls()
           hls.loadSource(url)
           hls.attachMedia(video)
-          hls.on((window as any).Hls.Events.MANIFEST_PARSED, () => {
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
             console.log("HLS manifest parsed")
           })
-          hls.on((window as any).Hls.Events.ERROR, (_event: any, data: any) => {
+          hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
             console.error("HLS error:", data)
             if (data.fatal) {
               onError(new Error(`HLS Error: ${data.type}`))
