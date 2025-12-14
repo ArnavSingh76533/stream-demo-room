@@ -56,7 +56,7 @@ const Html5PlayerWrapper = forwardRef<Html5PlayerWrapperHandle, Html5PlayerWrapp
       onBufferEnd = () => {},
     } = props
 
-    const videoRef = useRef<HTMLVideoElement | null>(null)
+    const internalVideoRef = useRef<HTMLVideoElement | null>(null)
     const [seekToValue, setSeekToValue] = useState<number | undefined>(undefined)
 
     useImperativeHandle(ref, () => ({
@@ -66,10 +66,10 @@ const Html5PlayerWrapper = forwardRef<Html5PlayerWrapperHandle, Html5PlayerWrapp
         setTimeout(() => setSeekToValue(undefined), 0)
       },
       getCurrentTime: () => {
-        return videoRef.current?.currentTime || 0
+        return internalVideoRef.current?.currentTime || 0
       },
       getInternalPlayer: () => {
-        return videoRef.current
+        return internalVideoRef.current
       },
     }))
 
@@ -98,14 +98,8 @@ const Html5PlayerWrapper = forwardRef<Html5PlayerWrapperHandle, Html5PlayerWrapp
           pip={pip}
           seekTo={seekToValue}
           style={videoStyle}
-          onReady={() => {
-            // Store ref after player is ready
-            const player = document.querySelector('.html5-player-wrapper video') as HTMLVideoElement
-            if (player) {
-              videoRef.current = player
-            }
-            onReady()
-          }}
+          videoRef={internalVideoRef}
+          onReady={onReady}
           onPlay={onPlay}
           onPause={onPause}
           onEnded={onEnded}

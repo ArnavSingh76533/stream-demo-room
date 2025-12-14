@@ -22,6 +22,7 @@ interface Html5VideoPlayerProps {
   pip?: boolean
   style?: React.CSSProperties
   className?: string
+  videoRef?: React.RefObject<HTMLVideoElement>
 }
 
 const Html5VideoPlayer: FC<Html5VideoPlayerProps> = ({
@@ -44,8 +45,10 @@ const Html5VideoPlayer: FC<Html5VideoPlayerProps> = ({
   pip = false,
   style,
   className,
+  videoRef: externalVideoRef,
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const internalVideoRef = useRef<HTMLVideoElement>(null)
+  const videoRef = externalVideoRef || internalVideoRef
   const [isReady, setIsReady] = useState(false)
   const [currentUrl, setCurrentUrl] = useState(url)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -88,8 +91,10 @@ const Html5VideoPlayer: FC<Html5VideoPlayerProps> = ({
       const video = videoRef.current
       if (!video) return
 
-      // Check if URL is HLS (.m3u8)
-      if (url.includes('.m3u8')) {
+      // Check if URL is HLS - look for .m3u8 extension or m3u8 in query params
+      const isHLS = /\.m3u8($|\?)/i.test(url) || /[?&]format=m3u8/i.test(url)
+      
+      if (isHLS) {
         // Try native HLS support first (Safari)
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = url

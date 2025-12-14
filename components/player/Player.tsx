@@ -314,9 +314,17 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         onEnded={() => socket?.emit("playEnded")}
         onError={(e) => {
           console.error("playback error", e)
-          // For HTML5 video, we get MediaError objects
-          if (e && typeof e === 'object' && 'code' in e) {
-            const mediaError = e as MediaError
+          // For HTML5 video, we get MediaError objects or Error instances
+          const isMediaError = (error: any): error is MediaError => {
+            return error && typeof error === 'object' && 
+                   'code' in error && 
+                   typeof error.code === 'number' &&
+                   error.code >= MediaError.MEDIA_ERR_ABORTED && 
+                   error.code <= MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+          }
+          
+          if (isMediaError(e)) {
+            const mediaError = e
             let errorMessage = "Video playback error"
             switch (mediaError.code) {
               case MediaError.MEDIA_ERR_ABORTED:
