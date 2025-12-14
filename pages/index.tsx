@@ -17,7 +17,7 @@ export default function Index() {
   const { data } = useSWR("/api/stats", (url) =>
     fetch(url).then((r) => r.json())
   )
-  const { data: roomsData, mutate: refreshRooms } = useSWR<{ rooms: PublicRoom[] }>(
+  const { data: roomsData } = useSWR<{ rooms: PublicRoom[] }>(
     "/api/rooms",
     (url) => fetch(url).then((r) => r.json()),
     { refreshInterval: 5000 } // Auto-refresh every 5 seconds
@@ -214,6 +214,7 @@ export default function Index() {
                     </div>
                   </div>
                   <Button
+                    tooltip="Join this room"
                     className="px-4 py-2 text-sm font-medium"
                     actionClasses="bg-primary-600 hover:bg-primary-700 active:bg-primary-800"
                     onClick={async () => {
