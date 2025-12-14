@@ -13,6 +13,7 @@ import {
 import { createNewRoom, createNewUser, updateLastSync } from "../../lib/room"
 import { Playlist, RoomState, UserState, ChatMessage } from "../../lib/types"
 import { isUrl } from "../../lib/utils"
+import { getDefaultImg, getDefaultSrc } from "../../lib/env"
 
 const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
   // @ts-ignore
@@ -299,13 +300,33 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
             return
           }
 
+          // Remove default image/video from playlist if it's the only item
+          const defaultImg = getDefaultImg()
+          const defaultMedia = defaultImg || getDefaultSrc()
+          
+          if (room.targetState.playlist.items.length === 1) {
+            const firstItem = room.targetState.playlist.items[0]
+            if (firstItem.src[0]?.src === defaultMedia) {
+              // Remove the default item
+              room.targetState.playlist.items = []
+              log("Removed default media from playlist")
+            }
+          }
+
+          // Add new video to playlist at position 0
+          room.targetState.playlist.items.unshift({
+            src: [{ src: url, resolution: "" }],
+            sub: [],
+          })
+          
           room.targetState.playing = {
             src: [{ src: url, resolution: "" }],
             sub: [],
           }
-          room.targetState.playlist.currentIndex = -1
+          room.targetState.playlist.currentIndex = 0
           room.targetState.progress = 0
           room.targetState.lastSync = new Date().getTime() / 1000
+          room.targetState.paused = false
           await broadcast(room)
         })
 

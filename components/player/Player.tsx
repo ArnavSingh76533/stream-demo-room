@@ -110,6 +110,8 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
     resolution: "",
   })
   const [currentSub, setCurrentSub] = useState<Subtitle>({ src: "", lang: "" })
+  const [ownerId, setOwnerId] = useState<string>("")
+  const [isOwner, setIsOwner] = useState(false)
 
   const [error, setError] = useState(null)
   const [ready, _setReady] = useState(false)
@@ -191,6 +193,12 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
 
       if (deltaServerTimeRef.current === 0) {
         setDeltaServerTime((room.serverTime - new Date().getTime()) / 1000)
+      }
+
+      // Update owner info
+      if (room.ownerId !== ownerId) {
+        setOwnerId(room.ownerId)
+        setIsOwner(socket.id === room.ownerId)
       }
 
       const update = room.targetState
@@ -419,6 +427,7 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         lastSync={lastSync}
         error={error}
         playAgain={() => socket?.emit("playAgain")}
+        isOwner={isOwner}
       />
 
       <div className={"absolute top-1 left-1 flex flex-col gap-1 p-1"}>

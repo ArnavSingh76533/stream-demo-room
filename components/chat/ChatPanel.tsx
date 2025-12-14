@@ -31,6 +31,26 @@ const ChatPanel: FC<Props> = ({ socket, className }) => {
     }
     const onNew = (msg: ChatMessage) => {
       setMessages([...messagesRef.current, msg].slice(-200))
+      // Play notification sound using Web Audio API
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
+        
+        oscillator.connect(gainNode)
+        gainNode.connect(audioContext.destination)
+        
+        oscillator.frequency.value = 800
+        oscillator.type = 'sine'
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
+        
+        oscillator.start(audioContext.currentTime)
+        oscillator.stop(audioContext.currentTime + 0.1)
+      } catch (err) {
+        console.log("Audio notification failed:", err)
+      }
     }
 
     socket.on("chatHistory", onHistory)
@@ -50,21 +70,22 @@ const ChatPanel: FC<Props> = ({ socket, className }) => {
 
   return (
     <div className={className ?? "flex flex-col h-64 border border-dark-700/50 rounded-xl overflow-hidden shadow-lg bg-dark-900"}>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-dark-900/50">
-        {messages.map((m) => (
-          <div key={m.id} className="text-sm bg-dark-800/50 rounded-lg p-3 border border-dark-700/30">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-primary-400">{m.name}</span>
-              <span className="text-dark-500 text-xs">•</span>
-              <span className="text-dark-500 text-xs">{new Date(m.ts).toLocaleTimeString()}</span>
-            </div>
-            <div className="break-words text-dark-200">{m.text}</div>
-          </div>
-        ))}
-        {messages.length === 0 && (
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-dark-900/50 flex flex-col-reverse">
+        {messages.length === 0 ? (
           <div className="text-dark-500 text-sm text-center py-8">
             No messages yet. Be the first to say hello! 👋
           </div>
+        ) : (
+          [...messages].reverse().map((m) => (
+            <div key={m.id} className="text-sm bg-dark-800/50 rounded-lg p-3 border border-dark-700/30">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-semibold text-primary-400">{m.name}</span>
+                <span className="text-dark-500 text-xs">•</span>
+                <span className="text-dark-500 text-xs">{new Date(m.ts).toLocaleTimeString()}</span>
+              </div>
+              <div className="break-words text-dark-200">{m.text}</div>
+            </div>
+          ))
         )}
       </div>
       <div className="p-3 flex gap-2 bg-dark-800/50 border-t border-dark-700/50">

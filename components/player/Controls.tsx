@@ -34,6 +34,7 @@ interface Props extends PlayerState {
   playIndex: (index: number) => void
   setSeeking: (seeking: boolean) => void
   playAgain: () => void
+  isOwner: boolean
 }
 
 let interaction = false
@@ -67,6 +68,7 @@ const Controls: FC<Props> = ({
   playIndex,
   setSeeking,
   playAgain,
+  isOwner,
 }) => {
   const [showControls, setShowControls] = useState(true)
   const [showTimePlayed, setShowTimePlayed] = useState(true)
@@ -80,10 +82,12 @@ const Controls: FC<Props> = ({
       if (new Date().getTime() - interactionTime > 350) {
         if (interaction && !doubleClick) {
           doubleClick = false
-          if (playEnded()) {
-            playAgain()
-          } else {
-            setPaused(!paused)
+          if (isOwner) {
+            if (playEnded()) {
+              playAgain()
+            } else {
+              setPaused(!paused)
+            }
           }
         }
 
@@ -190,7 +194,7 @@ const Controls: FC<Props> = ({
           <ControlButton
             tooltip={playEnded() ? "Play again" : paused ? "Play" : "Pause"}
             onClick={() => {
-              if (show) {
+              if (show && isOwner) {
                 if (playEnded()) {
                   playAgain()
                 } else {
@@ -199,6 +203,7 @@ const Controls: FC<Props> = ({
               }
             }}
             interaction={showControlsAction}
+            className={!isOwner ? "opacity-50 cursor-not-allowed" : ""}
           >
             {playEnded() ? (
               <IconReplay />
