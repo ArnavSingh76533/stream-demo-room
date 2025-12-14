@@ -51,7 +51,12 @@ export const createNewUser = async (roomId: string, socketId: string) => {
   await setRoom(roomId, room)
 }
 
-export const createNewRoom = async (roomId: string, socketId: string) => {
+export const createNewRoom = async (
+  roomId: string,
+  socketId: string,
+  ownerName?: string,
+  isPublic?: boolean
+) => {
   // Use default image if available, otherwise use default video
   const defaultImg = getDefaultImg()
   const defaultMedia = defaultImg || getDefaultSrc()
@@ -62,6 +67,8 @@ export const createNewRoom = async (roomId: string, socketId: string) => {
     commandHistory: [],
     id: roomId,
     ownerId: socketId,
+    ownerName: ownerName,
+    isPublic: isPublic ?? false, // Default to private
     targetState: {
       playlist: {
         items: [

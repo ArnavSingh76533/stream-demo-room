@@ -77,6 +77,8 @@ export interface RoomState {
   serverTime: number
   id: string
   ownerId: string
+  ownerName?: string // display name of the room owner
+  isPublic?: boolean // whether the room is public (shown in lobby) or private
   users: UserState[]
   targetState: TargetState
   commandHistory: CommandLog[]

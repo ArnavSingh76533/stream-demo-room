@@ -35,7 +35,20 @@ const Room: FC<Props> = ({ id }) => {
       if (socket !== null) {
         setConnected(socket.connected)
       } else {
-        const newSocket = createClientSocket(id)
+        // Get user name from localStorage
+        const userName = typeof window !== "undefined" 
+          ? localStorage.getItem("userName") || undefined
+          : undefined
+        
+        // Get room metadata from sessionStorage (set during creation)
+        const roomKey = `room_${id}_meta`
+        const roomMeta = typeof window !== "undefined" && sessionStorage.getItem(roomKey)
+          ? JSON.parse(sessionStorage.getItem(roomKey) || "{}")
+          : {}
+        
+        const isPublic = roomMeta.isPublic
+        
+        const newSocket = createClientSocket(id, userName, isPublic)
         newSocket.on("connect", () => {
           setConnected(true)
         })

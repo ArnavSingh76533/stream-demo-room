@@ -64,10 +64,22 @@ export function playItemFromPlaylist(
   socket.emit("playItemFromPlaylist", index)
 }
 
-export function createClientSocket(roomId: string): TypedSocket {
+export function createClientSocket(
+  roomId: string,
+  ownerName?: string,
+  isPublic?: boolean
+): TypedSocket {
   console.log("Trying to join room", roomId)
+  const query: any = { roomId }
+  if (ownerName) {
+    query.ownerName = ownerName
+  }
+  if (isPublic !== undefined) {
+    query.isPublic = isPublic.toString()
+  }
+  
   const socket: TypedSocket = io({
-    query: { roomId },
+    query,
     transports: ["websocket"],
     path: "/api/socketio",
   })

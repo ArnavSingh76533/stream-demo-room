@@ -69,6 +69,11 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
         }
 
         const roomId = socket.handshake.query.roomId.toLowerCase()
+        const ownerName = typeof socket.handshake.query.ownerName === "string" 
+          ? socket.handshake.query.ownerName 
+          : undefined
+        const isPublic = socket.handshake.query.isPublic === "true"
+        
         const log = (...props: any[]) => {
           console.log(
             "[" + new Date().toUTCString() + "][room " + roomId + "]",
@@ -78,8 +83,8 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
         }
 
         if (!(await roomExists(roomId))) {
-          await createNewRoom(roomId, socket.id)
-          log("created room")
+          await createNewRoom(roomId, socket.id, ownerName, isPublic)
+          log("created room", { ownerName, isPublic })
         }
 
         socket.join(roomId)
