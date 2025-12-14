@@ -13,7 +13,6 @@ if (!globalForCache.roomsCache) {
   globalForCache.roomsCache = rooms
 }
 
-let userCount = globalForCache.userCount || 0
 if (!globalForCache.userCount) {
   globalForCache.userCount = 0
 }
@@ -21,7 +20,6 @@ if (!globalForCache.userCount) {
 const getUserCount = () => globalForCache.userCount || 0
 const setUserCount = (count: number) => {
   globalForCache.userCount = count
-  userCount = count
 }
 
 export const getRoom = async (roomId: string): Promise<RoomState | null> => {
@@ -74,13 +72,10 @@ export const wipeCache = async (): Promise<"OK"> => {
 
 export const getPublicRooms = async (): Promise<RoomState[]> => {
   const publicRooms: RoomState[] = []
-  console.log('[cache] getPublicRooms: total rooms =', rooms.size)
-  for (const [roomId, room] of rooms) {
-    console.log(`[cache] Room ${roomId}: isPublic =`, room.isPublic, 'users =', room.users.length)
+  for (const [_, room] of rooms) {
     if (room.isPublic) {
       publicRooms.push(room)
     }
   }
-  console.log('[cache] Returning', publicRooms.length, 'public rooms')
   return publicRooms
 }
