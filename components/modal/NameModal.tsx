@@ -2,6 +2,7 @@ import { FC, useState } from "react"
 import Modal from "./Modal"
 import InputText from "../input/InputText"
 import Button from "../action/Button"
+import { useRouter } from "next/router"
 
 interface Props {
   show: boolean
@@ -11,6 +12,7 @@ interface Props {
 const NameModal: FC<Props> = ({ show, onSubmit }) => {
   const [name, setName] = useState("")
   const [error, setError] = useState("")
+  const router = useRouter()
 
   const handleSubmit = () => {
     const trimmedName = name.trim()
@@ -27,6 +29,10 @@ const NameModal: FC<Props> = ({ show, onSubmit }) => {
       return
     }
     onSubmit(trimmedName)
+  }
+
+  const handleGoBack = () => {
+    router.push("/")
   }
 
   return (
@@ -54,7 +60,15 @@ const NameModal: FC<Props> = ({ show, onSubmit }) => {
             <p className="text-red-500 text-sm mt-2">{error}</p>
           )}
         </div>
-        <div className="flex justify-end pt-2">
+        <div className="flex justify-between gap-3 pt-2">
+          <Button
+            tooltip="Go back to home"
+            className="px-4 py-2 font-medium"
+            actionClasses="bg-dark-700 hover:bg-dark-600 active:bg-dark-500"
+            onClick={handleGoBack}
+          >
+            Go Back
+          </Button>
           <Button
             tooltip="Continue with this name"
             className="px-6 py-2.5 font-medium"
