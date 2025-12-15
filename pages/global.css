@@ -115,3 +115,37 @@ html {
   z-index: 10;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
+
+/* Landscape orientation on mobile - make video fill screen better
+   max-height: 500px targets mobile devices in landscape (typical mobile heights are 320-480px) */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .video-normal {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    width: 100vw !important;
+  }
+
+  @supports not (height: 100dvh) {
+    .video-normal {
+      height: 100vh !important;
+      max-height: 100vh !important;
+    }
+  }
+}
+
+/* Landscape orientation fullscreen - ensure video container fills screen */
+@media screen and (orientation: landscape) {
+  .video-fullscreen {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    width: 100vw !important;
+    object-fit: contain;
+  }
+  
+  .video-fullscreen video,
+  .video-fullscreen iframe {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+  }
+}
