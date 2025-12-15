@@ -168,7 +168,7 @@ const Controls: FC<Props> = ({
       >
         <InteractionHandler
           className={
-            "flex grow cursor-pointer items-center align-middle justify-items-center justify-center"
+            "flex grow cursor-pointer items-center justify-center"
           }
           onClick={(_, touch) => {
             if (interaction) {
@@ -177,9 +177,17 @@ const Controls: FC<Props> = ({
               console.log("Toggled fullscreen")
               setFullscreen(!fullscreen)
             } else if (touch) {
-              // Single touch - toggle controls visibility
-              setShowControls(!showControls)
+              // Single touch on mobile - show controls and toggle play/pause
+              setShowControls(true)
               setMenuOpen(false)
+              // Toggle play/pause on touch (owner only)
+              if (isOwner) {
+                if (playEnded()) {
+                  playAgain()
+                } else {
+                  setPaused(!paused)
+                }
+              }
             } else {
               // Desktop click on center overlay - toggle play/pause if owner
               if (isOwner) {
@@ -198,228 +206,256 @@ const Controls: FC<Props> = ({
             showControlsAction(!touch)
           }}
         >
-          {paused ? <IconBigPlay /> : <IconBigPause />}
+          {/* Center play/pause button - positioned absolutely in center */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            {paused ? <IconBigPlay /> : <IconBigPause />}
+          </div>
         </InteractionHandler>
 
-        <div className={"flex flex-row p-1 items-center bg-dark-900/20"}>
-          {playlist.currentIndex > 0 && (
-            <ControlButton
-              tooltip={"Play previous"}
-              onClick={() => {
-                if (show && playlist.currentIndex > 0) {
-                  playIndex(playlist.currentIndex - 1)
-                }
-              }}
-              interaction={showControlsAction}
-            >
-              <IconBackward />
-            </ControlButton>
-          )}
-          <ControlButton
-            tooltip={playEnded() ? "Play again" : paused ? "Play" : "Pause"}
-            onClick={() => {
-              if (show && isOwner) {
-                if (playEnded()) {
-                  playAgain()
-                } else {
-                  setPaused(!paused)
-                }
-              }
+        {/* Bottom control cluster: progress bar on top, control buttons below */}
+        <div className="bg-dark-900/40">
+          <InputSlider
+            className={"bg-transparent"}
+            value={progress}
+            onChange={(value) => {
+              setProgress(value)
+              mouseMoved()
             }}
-            interaction={showControlsAction}
-            className={!isOwner ? "opacity-50 cursor-not-allowed" : ""}
-          >
-            {playEnded() ? (
-              <IconReplay />
-            ) : paused ? (
-              <IconPlay />
-            ) : (
-              <IconPause />
+            max={duration}
+            setSeeking={setSeeking}
+            showValueHover={true}
+          />
+          <div className={"flex flex-row px-1 pb-1 items-center"}>
+            {playlist.currentIndex > 0 && (
+              <ControlButton
+                tooltip={"Play previous"}
+                onClick={() => {
+                  if (show && playlist.currentIndex > 0) {
+                    playIndex(playlist.currentIndex - 1)
+                  }
+                }}
+                interaction={showControlsAction}
+              >
+                <IconBackward />
+              </ControlButton>
             )}
-          </ControlButton>
-          {playlist.currentIndex < playlist.items.length - 1 && (
             <ControlButton
-              tooltip={"Skip"}
+              tooltip={playEnded() ? "Play again" : paused ? "Play" : "Pause"}
               onClick={() => {
-                if (show && playlist.currentIndex < playlist.items.length - 1) {
-                  playIndex(playlist.currentIndex + 1)
+                if (show && isOwner) {
+                  if (playEnded()) {
+                    playAgain()
+                  } else {
+                    setPaused(!paused)
+                  }
+                }
+              }}
+              interaction={showControlsAction}
+              className={!isOwner ? "opacity-50 cursor-not-allowed" : ""}
+            >
+              {playEnded() ? (
+                <IconReplay />
+              ) : paused ? (
+                <IconPlay />
+              ) : (
+                <IconPause />
+              )}
+            </ControlButton>
+            {playlist.currentIndex < playlist.items.length - 1 && (
+              <ControlButton
+                tooltip={"Skip"}
+                onClick={() => {
+                  if (show && playlist.currentIndex < playlist.items.length - 1) {
+                    playIndex(playlist.currentIndex + 1)
+                  }
+                }}
+                interaction={showControlsAction}
+              >
+                <IconForward />
+              </ControlButton>
+            )}
+            <VolumeControl
+              muted={muted}
+              setMuted={setMuted}
+              volume={volume}
+              setVolume={setVolume}
+              interaction={showControlsAction}
+            />
+            <ControlButton
+              tooltip={"Current progress"}
+              className={"ml-auto flex items-center py-1"}
+              onClick={() => {
+                if (show) {
+                  setShowTimePlayed(!showTimePlayed)
                 }
               }}
               interaction={showControlsAction}
             >
-              <IconForward />
+              <span>
+                {(showTimePlayed
+                  ? secondsToTime(progress)
+                  : "-" + secondsToTime(duration - progress)) +
+                  " / " +
+                  secondsToTime(duration)}
+              </span>
             </ControlButton>
-          )}
-          <VolumeControl
-            muted={muted}
-            setMuted={setMuted}
-            volume={volume}
-            setVolume={setVolume}
-            interaction={showControlsAction}
-          />
-          <ControlButton
-            tooltip={"Current progress"}
-            className={"ml-auto flex items-center py-1"}
-            onClick={() => {
-              if (show) {
-                setShowTimePlayed(!showTimePlayed)
-              }
-            }}
-            interaction={showControlsAction}
-          >
-            <span>
-              {(showTimePlayed
-                ? secondsToTime(progress)
-                : "-" + secondsToTime(duration - progress)) +
-                " / " +
-                secondsToTime(duration)}
-            </span>
-          </ControlButton>
 
-          <ControlButton
-            tooltip={fullscreen ? "Leave fullscreen" : "Enter fullscreen"}
-            onClick={() => {
-              console.log("Toggled fullscreen")
-              setFullscreen(!fullscreen)
-            }}
-            interaction={showControlsAction}
-          >
-            {fullscreen ? <IconCompress /> : <IconExpand />}
-          </ControlButton>
-
-          <PlayerMenu
-            roomId={roomId}
-            playing={playing}
-            currentSrc={currentSrc}
-            setCurrentSrc={setCurrentSrc}
-            currentSub={currentSub}
-            setCurrentSub={setCurrentSub}
-            loop={loop}
-            setLoop={setLoop}
-            interaction={showControlsAction}
-            playbackRate={playbackRate}
-            setPlaybackRate={setPlaybackRate}
-            menuOpen={menuOpen}
-            setMenuOpen={setMenuOpen}
-          />
-
-          <ControlButton
-            tooltip={
-              !isOwner
-                ? musicMode
-                  ? "Music mode ON (owner only)"
-                  : "Music mode (owner only)"
-                : musicMode
-                ? "Exit music mode"
-                : "Enter music mode"
-            }
-            onClick={() => {
-              if (isOwner) {
-                setMusicMode(!musicMode)
-                if (!musicMode && pipEnabled) {
+            {/* PiP button - swapped position with Fullscreen */}
+            <ControlButton
+              tooltip={pipEnabled ? "Exit PiP" : "Enter PiP"}
+              onClick={async () => {
+                if (pipEnabled) {
+                  // Exit PiP
                   setPipEnabled(false)
-                }
-              }
-            }}
-            interaction={showControlsAction}
-            className={classNames(
-              !isOwner && "opacity-50 cursor-not-allowed",
-              musicMode && !isOwner && "text-primary-400"
-            )}
-          >
-            <IconMusic />
-          </ControlButton>
-
-          <ControlButton
-            tooltip={pipEnabled ? "Exit PiP" : "Enter PiP"}
-            onClick={async () => {
-              if (pipEnabled) {
-                // Exit PiP
-                setPipEnabled(false)
-                if (document.pictureInPictureElement) {
-                  try {
-                    await document.exitPictureInPicture()
-                  } catch (err) {
-                    console.warn("Failed to exit PiP:", err)
-                  }
-                }
-              } else {
-                // Try to enter PiP
-                // Robust YouTube URL detection with proper hostname validation
-                let isYouTube = false
-                try {
-                  const url = new URL(currentSrc.src)
-                  const hostname = url.hostname.toLowerCase()
-                  // Check for exact match or subdomain of youtube.com or youtu.be
-                  isYouTube = hostname === 'youtube.com' || 
-                              hostname === 'www.youtube.com' ||
-                              hostname === 'm.youtube.com' ||
-                              hostname === 'gaming.youtube.com' ||
-                              hostname === 'youtu.be' ||
-                              hostname === 'www.youtu.be' ||
-                              hostname.endsWith('.youtube.com') ||
-                              hostname.endsWith('.youtu.be')
-                } catch (e) {
-                  // Invalid URL, treat as non-YouTube
-                  isYouTube = false
-                }
-                
-                if (isYouTube) {
-                  // For YouTube, use ReactPlayer's pip prop
-                  setPipEnabled(true)
-                  if (!pipEnabled && musicMode) {
-                    setMusicMode(false)
+                  if (document.pictureInPictureElement) {
+                    try {
+                      await document.exitPictureInPicture()
+                    } catch (err) {
+                      console.warn("Failed to exit PiP:", err)
+                    }
                   }
                 } else {
-                  // For file sources, try native PiP API
-                  // Note: We query for the first video element on the page.
-                  // This works for the current app structure where there's only one video player.
-                  // If multiple video elements exist, this might select the wrong one.
-                  const videoElement = document.querySelector('video')
+                  // Try to enter PiP
+                  // Robust YouTube URL detection with proper hostname validation
+                  let isYouTube = false
+                  try {
+                    const url = new URL(currentSrc.src)
+                    const hostname = url.hostname.toLowerCase()
+                    // Check for exact match or subdomain of youtube.com or youtu.be
+                    isYouTube = hostname === 'youtube.com' || 
+                                hostname === 'www.youtube.com' ||
+                                hostname === 'm.youtube.com' ||
+                                hostname === 'gaming.youtube.com' ||
+                                hostname === 'youtu.be' ||
+                                hostname === 'www.youtu.be' ||
+                                hostname.endsWith('.youtube.com') ||
+                                hostname.endsWith('.youtu.be')
+                  } catch (e) {
+                    // Invalid URL, treat as non-YouTube
+                    isYouTube = false
+                  }
                   
-                  // Check if native PiP is supported and available
-                  const nativePipSupported = videoElement && 
-                    'requestPictureInPicture' in videoElement && 
-                    document.pictureInPictureEnabled &&
-                    videoElement.disablePictureInPicture !== true
-                  
-                  if (nativePipSupported && videoElement) {
-                    try {
-                      await videoElement.requestPictureInPicture()
-                      setPipEnabled(true)
-                      if (musicMode) {
-                        setMusicMode(false)
-                      }
-                    } catch (err) {
-                      console.warn("Native PiP failed:", err)
-                      // Native PiP failed - use fallback popup
-                      // Call synchronously since we're still in the click handler context
-                      openPipFallback()
+                  if (isYouTube) {
+                    // For YouTube, use ReactPlayer's pip prop
+                    setPipEnabled(true)
+                    if (!pipEnabled && musicMode) {
+                      setMusicMode(false)
                     }
                   } else {
-                    // Fallback: open popup window immediately in click context
-                    openPipFallback()
+                    // For file sources, try native PiP API
+                    // Note: We query for the first video element on the page.
+                    // This works for the current app structure where there's only one video player.
+                    // If multiple video elements exist, this might select the wrong one.
+                    const videoElement = document.querySelector('video')
+                    
+                    // Check if native PiP is supported and available
+                    const nativePipSupported = videoElement && 
+                      'requestPictureInPicture' in videoElement && 
+                      document.pictureInPictureEnabled &&
+                      videoElement.disablePictureInPicture !== true
+                    
+                    if (nativePipSupported && videoElement) {
+                      try {
+                        await videoElement.requestPictureInPicture()
+                        setPipEnabled(true)
+                        if (musicMode) {
+                          setMusicMode(false)
+                        }
+                      } catch (err) {
+                        console.warn("Native PiP failed:", err)
+                        // Native PiP failed - use fallback popup
+                        // Call synchronously since we're still in the click handler context
+                        openPipFallback()
+                      }
+                    } else {
+                      // Fallback: open popup window immediately in click context
+                      openPipFallback()
+                    }
                   }
                 }
-              }
-            }}
-            interaction={showControlsAction}
-          >
-            <IconPip />
-          </ControlButton>
-        </div>
+              }}
+              interaction={showControlsAction}
+            >
+              <IconPip />
+            </ControlButton>
 
-        <InputSlider
-          className={"bg-dark-900/20"}
-          value={progress}
-          onChange={(value) => {
-            setProgress(value)
-            mouseMoved()
-          }}
-          max={duration}
-          setSeeking={setSeeking}
-          showValueHover={true}
-        />
+            <PlayerMenu
+              roomId={roomId}
+              playing={playing}
+              currentSrc={currentSrc}
+              setCurrentSrc={setCurrentSrc}
+              currentSub={currentSub}
+              setCurrentSub={setCurrentSub}
+              loop={loop}
+              setLoop={setLoop}
+              interaction={showControlsAction}
+              playbackRate={playbackRate}
+              setPlaybackRate={setPlaybackRate}
+              menuOpen={menuOpen}
+              setMenuOpen={setMenuOpen}
+            />
+
+            <ControlButton
+              tooltip={
+                !isOwner
+                  ? musicMode
+                    ? "Music mode ON (owner only)"
+                    : "Music mode (owner only)"
+                  : musicMode
+                  ? "Exit music mode"
+                  : "Enter music mode"
+              }
+              onClick={() => {
+                if (isOwner) {
+                  setMusicMode(!musicMode)
+                  if (!musicMode && pipEnabled) {
+                    setPipEnabled(false)
+                  }
+                }
+              }}
+              interaction={showControlsAction}
+              className={classNames(
+                !isOwner && "opacity-50 cursor-not-allowed",
+                musicMode && !isOwner && "text-primary-400"
+              )}
+            >
+              <IconMusic />
+            </ControlButton>
+
+            {/* Fullscreen button - swapped position with PiP */}
+            <ControlButton
+              tooltip={fullscreen ? "Leave fullscreen" : "Enter fullscreen"}
+              onClick={async () => {
+                console.log("Toggled fullscreen")
+                const newFullscreen = !fullscreen
+                await setFullscreen(newFullscreen)
+                
+                // Handle screen orientation for mobile devices
+                if ('screen' in window && 'orientation' in window.screen) {
+                  try {
+                    // Use type assertion for Screen Orientation API (not fully typed in TS)
+                    const orientation = window.screen.orientation as ScreenOrientation & {
+                      lock?: (orientation: string) => Promise<void>
+                    }
+                    if (newFullscreen && orientation.lock) {
+                      // Lock to landscape when entering fullscreen
+                      await orientation.lock('landscape')
+                    } else {
+                      // Unlock orientation when exiting fullscreen
+                      orientation.unlock()
+                    }
+                  } catch (err) {
+                    // Orientation lock not supported or failed - this is expected on desktop
+                    console.log("Screen orientation lock not available:", err)
+                  }
+                }
+              }}
+              interaction={showControlsAction}
+            >
+              {fullscreen ? <IconCompress /> : <IconExpand />}
+            </ControlButton>
+          </div>
+        </div>
       </InteractionHandler>
 
       <Tooltip
