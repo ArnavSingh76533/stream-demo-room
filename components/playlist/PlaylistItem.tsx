@@ -120,7 +120,7 @@ const PlaylistItem: FC<Props> = ({
 
   return (
     <Draggable
-      key={item.src[0].src + "-" + index}
+      key={(item.src?.[0]?.src || 'unknown') + "-" + index}
       draggableId={"playlistMenu-item-" + index}
       index={index}
     >
@@ -187,7 +187,7 @@ const PlaylistItem: FC<Props> = ({
             </div>
             {/* URL */}
             <div className="text-xs text-dark-500 truncate">
-              {item.src[0]?.src || 'Unknown URL'}
+              {item.src?.[0]?.src || 'Unknown URL'}
             </div>
           </div>
 
@@ -213,7 +213,7 @@ const PlaylistItem: FC<Props> = ({
               )}
             </ControlButton>
             <NewTabLink
-              href={item.src[0].src}
+              href={item.src?.[0]?.src || '#'}
               className={"p-1 text-dark-400 hover:text-primary-500 transition-colors"}
               title="Open in new tab"
             >
