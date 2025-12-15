@@ -286,8 +286,9 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
               origin: window.location.host,
               // Enable autoplay to YouTube suggestions when queue is empty
               // rel=1 shows related videos, autoplay=1 autoplays next video
-              rel: playlist.currentIndex >= playlist.items.length - 1 ? 1 : 0,
-              autoplay: playlist.currentIndex >= playlist.items.length - 1 ? 1 : 0,
+              ...(playlist.currentIndex >= playlist.items.length - 1
+                ? { rel: 1, autoplay: 1 }
+                : {}),
             },
           },
           file: {

@@ -305,8 +305,10 @@ const Controls: FC<Props> = ({
 
           <ControlButton
             tooltip={
-              !isOwner && musicMode
-                ? "Music mode (owner only)"
+              !isOwner
+                ? musicMode
+                  ? "Music mode ON (owner only)"
+                  : "Music mode (owner only)"
                 : musicMode
                 ? "Exit music mode"
                 : "Enter music mode"
@@ -320,7 +322,10 @@ const Controls: FC<Props> = ({
               }
             }}
             interaction={showControlsAction}
-            className={!isOwner ? "opacity-50 cursor-not-allowed" : ""}
+            className={classNames(
+              !isOwner && "opacity-50 cursor-not-allowed",
+              musicMode && !isOwner && "text-primary-400"
+            )}
           >
             <IconMusic />
           </ControlButton>
