@@ -177,27 +177,13 @@ const Controls: FC<Props> = ({
               console.log("Toggled fullscreen")
               setFullscreen(!fullscreen)
             } else if (touch) {
-              // Single touch on mobile - show controls and toggle play/pause
+              // Single touch on mobile - show controls only, no play/pause toggle
+              // Play/pause only from control buttons
               setShowControls(true)
               setMenuOpen(false)
-              // Toggle play/pause on touch (owner only)
-              if (isOwner) {
-                if (playEnded()) {
-                  playAgain()
-                } else {
-                  setPaused(!paused)
-                }
-              }
-            } else {
-              // Desktop click on center overlay - toggle play/pause if owner
-              if (isOwner) {
-                if (playEnded()) {
-                  playAgain()
-                } else {
-                  setPaused(!paused)
-                }
-              }
             }
+            // Desktop click on center overlay - no play/pause toggle
+            // Play/pause only from control buttons
 
             interact()
             mouseMoved(touch)
@@ -206,26 +192,15 @@ const Controls: FC<Props> = ({
             showControlsAction(!touch)
           }}
         >
-          {/* Center play/pause button - positioned absolutely in center */}
+          {/* Center play/pause indicator - positioned absolutely in center */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             {paused ? <IconBigPlay /> : <IconBigPause />}
           </div>
         </InteractionHandler>
 
-        {/* Bottom control cluster: progress bar on top, control buttons below */}
+        {/* Bottom control cluster: control buttons on top, progress bar below */}
         <div className="bg-dark-900/40">
-          <InputSlider
-            className={"bg-transparent"}
-            value={progress}
-            onChange={(value) => {
-              setProgress(value)
-              mouseMoved()
-            }}
-            max={duration}
-            setSeeking={setSeeking}
-            showValueHover={true}
-          />
-          <div className={"flex flex-row px-1 pb-1 items-center"}>
+          <div className={"flex flex-row px-1 py-0.5 items-center gap-0.5"}>
             {playlist.currentIndex > 0 && (
               <ControlButton
                 tooltip={"Play previous"}
@@ -283,7 +258,7 @@ const Controls: FC<Props> = ({
             />
             <ControlButton
               tooltip={"Current progress"}
-              className={"ml-auto flex items-center py-1"}
+              className={"ml-auto flex items-center py-0.5"}
               onClick={() => {
                 if (show) {
                   setShowTimePlayed(!showTimePlayed)
@@ -291,7 +266,7 @@ const Controls: FC<Props> = ({
               }}
               interaction={showControlsAction}
             >
-              <span>
+              <span className="text-sm">
                 {(showTimePlayed
                   ? secondsToTime(progress)
                   : "-" + secondsToTime(duration - progress)) +
@@ -300,7 +275,7 @@ const Controls: FC<Props> = ({
               </span>
             </ControlButton>
 
-            {/* PiP button - swapped position with Fullscreen */}
+            {/* PiP button */}
             <ControlButton
               tooltip={pipEnabled ? "Exit PiP" : "Enter PiP"}
               onClick={async () => {
@@ -422,7 +397,7 @@ const Controls: FC<Props> = ({
               <IconMusic />
             </ControlButton>
 
-            {/* Fullscreen button - swapped position with PiP */}
+            {/* Fullscreen button */}
             <ControlButton
               tooltip={fullscreen ? "Leave fullscreen" : "Enter fullscreen"}
               onClick={async () => {
@@ -455,6 +430,18 @@ const Controls: FC<Props> = ({
               {fullscreen ? <IconCompress /> : <IconExpand />}
             </ControlButton>
           </div>
+          {/* Progress bar at bottom */}
+          <InputSlider
+            className={"bg-transparent pb-1"}
+            value={progress}
+            onChange={(value) => {
+              setProgress(value)
+              mouseMoved()
+            }}
+            max={duration}
+            setSeeking={setSeeking}
+            showValueHover={true}
+          />
         </div>
       </InteractionHandler>
 

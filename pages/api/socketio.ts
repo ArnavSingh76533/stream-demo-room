@@ -340,12 +340,22 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
             }
           }
 
-          // Add new video to playlist at position 0
+          // Replace the currently playing video with the new one
+          // If there's a current video at index 0, replace it; otherwise add new
           const newMedia = createMediaElement(url)
-          room.targetState.playlist.items.unshift(newMedia)
+          
+          if (room.targetState.playlist.currentIndex >= 0 && 
+              room.targetState.playlist.items.length > 0) {
+            // Replace the currently playing video at currentIndex
+            const currentIdx = room.targetState.playlist.currentIndex
+            room.targetState.playlist.items[currentIdx] = newMedia
+          } else {
+            // No current video, add as first item
+            room.targetState.playlist.items.unshift(newMedia)
+            room.targetState.playlist.currentIndex = 0
+          }
           
           room.targetState.playing = newMedia
-          room.targetState.playlist.currentIndex = 0
           room.targetState.progress = 0
           room.targetState.lastSync = new Date().getTime() / 1000
           room.targetState.paused = false

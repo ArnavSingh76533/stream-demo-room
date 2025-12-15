@@ -10,6 +10,7 @@ export interface MediaOption {
 
 export interface MediaElement {
   title?: string
+  thumbnail?: string  // URL to the video thumbnail image
   sub: Subtitle[]
   src: MediaOption[]
 }
