@@ -36,6 +36,7 @@ export interface ClientToServerEvents {
   setLoop: (loop: boolean) => void
   setProgress: (progress: number) => void
   setPlaybackRate: (playbackRate: number) => void
+  setMusicMode: (musicMode: boolean) => void
   seek: (progress: number) => void
 
   // Playback and fetching

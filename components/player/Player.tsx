@@ -203,6 +203,11 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         setIsOwner(socket.id === room.ownerId)
       }
 
+      // Update music mode from server
+      if (room.musicMode !== undefined && room.musicMode !== musicMode) {
+        setMusicMode(room.musicMode)
+      }
+
       const update = room.targetState
       if (update.lastSync !== lastSyncRef.current) {
         _setLastSync(update.lastSync)
@@ -232,7 +237,7 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         _setPlaylist(update.playlist)
       }
     })
-  }, [socket, ownerId])
+  }, [socket, ownerId, musicMode])
 
   useEffect(() => {
     if (ready) {
@@ -279,6 +284,10 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
               disablekb: 1,
               modestbranding: 1,
               origin: window.location.host,
+              // Enable autoplay to YouTube suggestions when queue is empty
+              // rel=1 shows related videos, autoplay=1 autoplays next video
+              rel: playlist.currentIndex >= playlist.items.length - 1 ? 1 : 0,
+              autoplay: playlist.currentIndex >= playlist.items.length - 1 ? 1 : 0,
             },
           },
           file: {
@@ -291,7 +300,6 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         pip={pipEnabled}
         playing={!paused}
         controls={false}
-        loop={loop}
         playbackRate={playbackRate}
         volume={volume}
         muted={muted}
@@ -446,7 +454,12 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         pipEnabled={pipEnabled}
         setPipEnabled={setPipEnabled}
         musicMode={musicMode}
-        setMusicMode={setMusicMode}
+        setMusicMode={(enabled: boolean) => {
+          // Only emit if user is owner - server will enforce this as well
+          if (isOwner) {
+            socket?.emit("setMusicMode", enabled)
+          }
+        }}
       />
 
       <div className={"absolute top-1 left-1 flex flex-col gap-1 p-1"}>

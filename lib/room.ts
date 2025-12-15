@@ -71,6 +71,7 @@ export const createNewRoom = async (
     ownerId: socketId,
     ownerName: userName,
     isPublic: isPublic ?? false, // Default to private
+    musicMode: false, // Default music mode to off
     targetState: {
       playlist: {
         items: [

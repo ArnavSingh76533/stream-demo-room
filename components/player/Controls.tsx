@@ -180,6 +180,15 @@ const Controls: FC<Props> = ({
               // Single touch - toggle controls visibility
               setShowControls(!showControls)
               setMenuOpen(false)
+            } else {
+              // Desktop click on center overlay - toggle play/pause if owner
+              if (isOwner) {
+                if (playEnded()) {
+                  playAgain()
+                } else {
+                  setPaused(!paused)
+                }
+              }
             }
 
             interact()
@@ -295,14 +304,23 @@ const Controls: FC<Props> = ({
           />
 
           <ControlButton
-            tooltip={musicMode ? "Exit music mode" : "Enter music mode"}
+            tooltip={
+              !isOwner && musicMode
+                ? "Music mode (owner only)"
+                : musicMode
+                ? "Exit music mode"
+                : "Enter music mode"
+            }
             onClick={() => {
-              setMusicMode(!musicMode)
-              if (!musicMode && pipEnabled) {
-                setPipEnabled(false)
+              if (isOwner) {
+                setMusicMode(!musicMode)
+                if (!musicMode && pipEnabled) {
+                  setPipEnabled(false)
+                }
               }
             }}
             interaction={showControlsAction}
+            className={!isOwner ? "opacity-50 cursor-not-allowed" : ""}
           >
             <IconMusic />
           </ControlButton>

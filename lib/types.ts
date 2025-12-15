@@ -79,6 +79,7 @@ export interface RoomState {
   ownerId: string
   ownerName?: string // display name of the room owner
   isPublic?: boolean // whether the room is public (shown in lobby) or private
+  musicMode?: boolean // whether music mode is enabled (admin-only toggle)
   users: UserState[]
   targetState: TargetState
   commandHistory: CommandLog[]
