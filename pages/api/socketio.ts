@@ -197,20 +197,29 @@ const ioHandler = (_: NextApiRequest, res: NextApiResponse) => {
           log("playback ended")
 
           if (room.targetState.loop) {
+            // Loop mode: restart the current video without modifying playlist
             room.targetState.progress = 0
             room.targetState.paused = false
           } else if (
             room.targetState.playlist.currentIndex + 1 <
             room.targetState.playlist.items.length
           ) {
+            // Auto-advance to next item: play next video and remove finished one
             room.targetState.playing =
               room.targetState.playlist.items[
                 room.targetState.playlist.currentIndex + 1
               ]
-            room.targetState.playlist.currentIndex += 1
+            
+            // Remove the finished item from playlist (shift remaining items left)
+            room.targetState.playlist.items.splice(room.targetState.playlist.currentIndex, 1)
+            
+            // Reset currentIndex to 0 since items have shifted
+            room.targetState.playlist.currentIndex = 0
             room.targetState.progress = 0
             room.targetState.paused = false
+            log("Removed finished item from playlist, shifted remaining items")
           } else {
+            // Last item finished: pause at end
             room.targetState.progress =
               room.users.find((user) => user.socketIds[0] === socket.id)?.player
                 .progress || 0

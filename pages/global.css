@@ -72,3 +72,47 @@ input:focus, textarea:focus {
 html {
   scroll-behavior: smooth;
 }
+
+/* Fullscreen video player styles for mobile */
+.video-fullscreen {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  width: 100vw !important;
+}
+
+/* Support for older browsers that don't support dvh */
+@supports not (height: 100dvh) {
+  .video-fullscreen {
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+}
+
+/* Safe area handling for iOS notches */
+.video-fullscreen {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Non-fullscreen video styles */
+.video-normal {
+  height: calc((9 / 16) * 100vw);
+  max-height: calc(100vh - 210px);
+  max-height: calc(100dvh - 210px);
+}
+
+@supports not (height: 100dvh) {
+  .video-normal {
+    max-height: calc(100vh - 210px);
+  }
+}
+
+/* Controls overlay improvements for fullscreen */
+.controls-fullscreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}

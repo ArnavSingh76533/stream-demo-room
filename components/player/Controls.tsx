@@ -44,7 +44,6 @@ interface Props extends PlayerState {
 }
 
 let interaction = false
-let doubleClick = false
 let interactionTime = 0
 let lastMouseMove = 0
 
@@ -90,17 +89,10 @@ const Controls: FC<Props> = ({
 
     setTimeout(() => {
       if (new Date().getTime() - interactionTime > 350) {
-        if (interaction && !doubleClick) {
-          doubleClick = false
-          if (isOwner) {
-            if (playEnded()) {
-              playAgain()
-            } else {
-              setPaused(!paused)
-            }
-          }
-        }
-
+        // Reset interaction flag
+        // Double-click detection works by checking if interaction is still true
+        // when the second click happens (within 400ms)
+        // We don't toggle pause anymore - only show/hide controls on single tap
         interaction = false
       }
     }, 400)
@@ -115,6 +107,28 @@ const Controls: FC<Props> = ({
 
   const playEnded = () => {
     return paused && progress > duration - SYNC_DELTA
+  }
+
+  const openPipFallback = () => {
+    // Open a small popup window as PiP fallback
+    const width = 480
+    const height = 270
+    const left = window.screen.width - width - 20
+    const top = window.screen.height - height - 100
+    
+    const pipWindow = window.open(
+      `/embed/${roomId}`,
+      'PiP Player',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,status=no,toolbar=no,menubar=no,location=no`
+    )
+    
+    if (pipWindow) {
+      pipWindow.focus()
+      console.log("Opened PiP fallback window")
+    } else {
+      console.error("Failed to open PiP fallback window - popup may be blocked")
+      alert("Please allow popups to use Picture-in-Picture mode")
+    }
   }
 
   const mouseMoved = (touch: boolean | null = null) => {
@@ -137,7 +151,8 @@ const Controls: FC<Props> = ({
       <InteractionHandler
         className={classNames(
           "absolute top-0 left-0 w-full h-full transition-opacity flex flex-col",
-          show ? "opacity-100" : "opacity-0"
+          show ? "opacity-100" : "opacity-0",
+          fullscreen ? "controls-fullscreen" : ""
         )}
         onMove={(_, touch) => {
           setShowControls(!touch)
@@ -156,11 +171,12 @@ const Controls: FC<Props> = ({
           }
           onClick={(_, touch) => {
             if (interaction) {
-              doubleClick = true
+              // Second click detected within timeout - toggle fullscreen
               interaction = false
               console.log("Toggled fullscreen")
               setFullscreen(!fullscreen)
             } else if (touch) {
+              // Single touch - toggle controls visibility
               setShowControls(!showControls)
               setMenuOpen(false)
             }
@@ -305,10 +321,47 @@ const Controls: FC<Props> = ({
 
           <ControlButton
             tooltip={pipEnabled ? "Exit PiP" : "Enter PiP"}
-            onClick={() => {
-              setPipEnabled(!pipEnabled)
-              if (!pipEnabled && musicMode) {
-                setMusicMode(false)
+            onClick={async () => {
+              if (pipEnabled) {
+                // Exit PiP
+                setPipEnabled(false)
+                if (document.pictureInPictureElement) {
+                  try {
+                    await document.exitPictureInPicture()
+                  } catch (err) {
+                    console.warn("Failed to exit PiP:", err)
+                  }
+                }
+              } else {
+                // Try to enter PiP
+                const isYouTube = currentSrc.src.includes('youtube.com') || currentSrc.src.includes('youtu.be')
+                
+                if (isYouTube) {
+                  // For YouTube, use ReactPlayer's pip prop
+                  setPipEnabled(true)
+                  if (!pipEnabled && musicMode) {
+                    setMusicMode(false)
+                  }
+                } else {
+                  // For file sources, try native PiP API
+                  const videoElement = document.querySelector('video')
+                  
+                  if (videoElement && 'requestPictureInPicture' in videoElement && document.pictureInPictureEnabled) {
+                    try {
+                      await videoElement.requestPictureInPicture()
+                      setPipEnabled(true)
+                      if (musicMode) {
+                        setMusicMode(false)
+                      }
+                    } catch (err) {
+                      console.warn("Native PiP failed, trying fallback:", err)
+                      openPipFallback()
+                    }
+                  } else {
+                    // Fallback: open popup window
+                    openPipFallback()
+                  }
+                }
               }
             }}
             interaction={showControlsAction}
