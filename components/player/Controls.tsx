@@ -17,8 +17,6 @@ import IconBackward from "../icon/IconBackward"
 import IconForward from "../icon/IconForward"
 import PlayerMenu from "./PlayerMenu"
 import { Tooltip } from "react-tooltip"
-import IconNewTab from "../icon/IconNewTab"
-import Link from "next/link"
 import IconMusic from "../icon/IconMusic"
 import IconPip from "../icon/IconPip"
 
@@ -194,19 +192,7 @@ const Controls: FC<Props> = ({
           {paused ? <IconBigPlay /> : <IconBigPause />}
         </InteractionHandler>
 
-        <InputSlider
-          className={"bg-dark-900/20"}
-          value={progress}
-          onChange={(value) => {
-            setProgress(value)
-            mouseMoved()
-          }}
-          max={duration}
-          setSeeking={setSeeking}
-          showValueHover={true}
-        />
-
-        <div className={"flex flex-row p-1 items-stretch bg-dark-900/20"}>
+        <div className={"flex flex-row p-1 items-center bg-dark-900/20"}>
           {playlist.currentIndex > 0 && (
             <ControlButton
               tooltip={"Play previous"}
@@ -279,18 +265,6 @@ const Controls: FC<Props> = ({
                 " / " +
                 secondsToTime(duration)}
             </span>
-          </ControlButton>
-
-          <ControlButton
-            tooltip={"Open source in new tab"}
-            onClick={() => {
-              window.open(currentSrc.src, "_blank")?.focus()
-            }}
-            interaction={showControlsAction}
-          >
-            <Link href={currentSrc.src} target={"_blank"} rel={"noreferrer"}>
-              <IconNewTab sizeClassName={"w-5 h-5"} />
-            </Link>
           </ControlButton>
 
           <PlayerMenu
@@ -411,6 +385,18 @@ const Controls: FC<Props> = ({
             {fullscreen ? <IconCompress /> : <IconExpand />}
           </ControlButton>
         </div>
+
+        <InputSlider
+          className={"bg-dark-900/20"}
+          value={progress}
+          onChange={(value) => {
+            setProgress(value)
+            mouseMoved()
+          }}
+          max={duration}
+          setSeeking={setSeeking}
+          showValueHover={true}
+        />
       </InteractionHandler>
 
       <Tooltip
