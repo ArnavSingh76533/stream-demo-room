@@ -12,7 +12,7 @@ import {
   FullScreenProps,
   useFullScreenHandle,
 } from "react-full-screen"
-import Html5PlayerWrapper, { Html5PlayerWrapperHandle } from "./Html5PlayerWrapper"
+import ReactPlayer from "react-player"
 import {
   MediaElement,
   MediaOption,
@@ -133,7 +133,7 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
   const [pipEnabled, setPipEnabled] = useState(false)
   const [musicMode, setMusicMode] = useState(false)
   const fullscreenHandle = useFullScreenHandle()
-  const player = useRef<Html5PlayerWrapperHandle>(null)
+  const player = useRef<ReactPlayer>(null)
 
   useEffect(() => {
     if (!muted && !unmuted) {
@@ -264,7 +264,7 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
           </div>
         </div>
       )}
-      <Html5PlayerWrapper
+      <ReactPlayer
         style={{
           maxHeight: fullscreen || fullHeight ? "100vh" : "calc(100vh - 210px)",
           visibility: musicMode ? "hidden" : "visible",
@@ -273,6 +273,20 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         ref={player}
         width={"100%"}
         height={fullscreen || fullHeight ? "100vh" : "calc((9 / 16) * 100vw)"}
+        config={{
+          youtube: {
+            playerVars: {
+              disablekb: 1,
+              modestbranding: 1,
+              origin: window.location.host,
+            },
+          },
+          file: {
+            hlsVersion: "1.1.3",
+            dashVersion: "4.2.1",
+            flvVersion: "1.6.2",
+          },
+        }}
         url={currentSrc.src}
         pip={pipEnabled}
         playing={!paused}
@@ -282,17 +296,35 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         volume={volume}
         muted={muted}
         onReady={() => {
-          console.log("HTML5 Video Player is ready")
+          console.log("React-Player is ready")
           setReady(true)
           setBuffering(false)
+          // need "long" timeout for yt to be ready
+          setTimeout(() => {
+            const internalPlayer = player.current?.getInternalPlayer()
+            console.log("Internal player:", player)
+            if (
+              typeof internalPlayer !== "undefined" &&
+              internalPlayer.unloadModule
+            ) {
+              console.log("Unloading cc of youtube player")
+              internalPlayer.unloadModule("cc") // Works for AS3 ignored by html5
+              internalPlayer.unloadModule("captions") // Works for html5 ignored by AS3
+            }
+          }, 1000)
         }}
         onPlay={() => {
           console.log("player started to play")
           if (paused) {
             const internalPlayer = player.current?.getInternalPlayer()
             console.warn("Started to play despite being paused", internalPlayer)
-            if (internalPlayer) {
-              internalPlayer.pause()
+            if (typeof internalPlayer !== "undefined") {
+              if ("pause" in internalPlayer) {
+                internalPlayer.pause()
+              }
+              if ("pauseVideo" in internalPlayer) {
+                internalPlayer.pauseVideo()
+              }
             }
           }
         }}
@@ -304,8 +336,13 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
               "Started to pause despite being not paused",
               internalPlayer
             )
-            if (internalPlayer) {
-              internalPlayer.play()
+            if (typeof internalPlayer !== "undefined") {
+              if ("play" in internalPlayer) {
+                internalPlayer.play()
+              }
+              if ("playVideo" in internalPlayer) {
+                internalPlayer.playVideo()
+              }
             }
           }
         }}
@@ -314,72 +351,42 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         onEnded={() => socket?.emit("playEnded")}
         onError={(e) => {
           console.error("playback error", e)
-          // For HTML5 video, we get MediaError objects or Error instances
-          const isMediaError = (error: any): error is MediaError => {
-            return error && typeof error === 'object' && 
-                   'code' in error && 
-                   typeof error.code === 'number' &&
-                   error.code >= MediaError.MEDIA_ERR_ABORTED && 
-                   error.code <= MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
-          }
-          
-          if (isMediaError(e)) {
-            const mediaError = e
-            let errorMessage = "Video playback error"
-            switch (mediaError.code) {
-              case MediaError.MEDIA_ERR_ABORTED:
-                errorMessage = "Video playback aborted"
-                break
-              case MediaError.MEDIA_ERR_NETWORK:
-                errorMessage = "Network error while loading video"
-                break
-              case MediaError.MEDIA_ERR_DECODE:
-                errorMessage = "Video decoding error"
-                break
-              case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                errorMessage = "Video format not supported"
-                break
-            }
-            console.error(errorMessage, mediaError)
-            
-            // Try to get video url via yt-dlp for unsupported sources
-            if (mediaError.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-              console.log("Trying to get video url via yt-dlp...")
-              fetch("/api/source", { method: "POST", body: currentSrc.src })
-                .then((res) => {
-                  if (res.status === 200) {
-                    return res.json()
-                  }
-                  return res.text()
-                })
-                .then((data) => {
-                  console.log("Received data", data)
-                  if (typeof data === "string") {
-                    throw new Error(data)
-                  }
-                  if (data.error) {
-                    throw new Error(data.stderr)
-                  }
+          if ("target" in e && "type" in e && e.type === "error") {
+            console.log("Trying to get video url via yt-dlp...")
+            fetch("/api/source", { method: "POST", body: currentSrc.src })
+              .then((res) => {
+                if (res.status === 200) {
+                  return res.json()
+                }
+                return res.text()
+              })
+              .then((data) => {
+                console.log("Received data", data)
+                if (typeof data === "string") {
+                  throw new Error(data)
+                }
+                if (data.error) {
+                  throw new Error(data.stderr)
+                }
 
-                  const videoSrc: string[] = data.stdout
-                    .split("\n")
-                    .filter((v: string) => v !== "")
-                  setCurrentSrc({
-                    src: videoSrc[0],
-                    resolution: "",
-                  })
+                const videoSrc: string[] = data.stdout
+                  .split("\n")
+                  .filter((v: string) => v !== "")
+                setCurrentSrc({
+                  src: videoSrc[0],
+                  resolution: "",
                 })
-                .catch((error) => {
-                  console.error("Failed to get video url", error)
-                })
-            }
+              })
+              .catch((error) => {
+                console.error("Failed to get video url", error)
+              })
+            setError(e)
           }
-          setError(e)
         }}
         onProgress={({ playedSeconds }) => {
           if (!ready) {
             console.warn(
-              "HTML5 Video Player did not report it being ready, but already playing"
+              "React-Player did not report it being ready, but already playing"
             )
             // sometimes onReady doesn't fire, but if there's playback...
             setReady(true)
