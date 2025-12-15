@@ -265,14 +265,14 @@ const Player: FC<Props> = ({ roomId, socket, fullHeight }) => {
         </div>
       )}
       <ReactPlayer
+        className={fullscreen || fullHeight ? "video-fullscreen" : "video-normal"}
         style={{
-          maxHeight: fullscreen || fullHeight ? "100vh" : "calc(100vh - 210px)",
           visibility: musicMode ? "hidden" : "visible",
-          height: musicMode ? "0px" : (fullscreen || fullHeight ? "100vh" : "calc((9 / 16) * 100vw)"),
+          height: musicMode ? "0px" : undefined,
         }}
         ref={player}
         width={"100%"}
-        height={fullscreen || fullHeight ? "100vh" : "calc((9 / 16) * 100vw)"}
+        height={fullscreen || fullHeight ? "100dvh" : "calc((9 / 16) * 100vw)"}
         config={{
           youtube: {
             playerVars: {
