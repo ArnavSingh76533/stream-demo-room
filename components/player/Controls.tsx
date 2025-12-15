@@ -369,7 +369,13 @@ const Controls: FC<Props> = ({
                   // If multiple video elements exist, this might select the wrong one.
                   const videoElement = document.querySelector('video')
                   
-                  if (videoElement && 'requestPictureInPicture' in videoElement && document.pictureInPictureEnabled) {
+                  // Check if native PiP is supported and available
+                  const nativePipSupported = videoElement && 
+                    'requestPictureInPicture' in videoElement && 
+                    document.pictureInPictureEnabled &&
+                    videoElement.disablePictureInPicture !== true
+                  
+                  if (nativePipSupported && videoElement) {
                     try {
                       await videoElement.requestPictureInPicture()
                       setPipEnabled(true)
@@ -377,11 +383,13 @@ const Controls: FC<Props> = ({
                         setMusicMode(false)
                       }
                     } catch (err) {
-                      console.warn("Native PiP failed, trying fallback:", err)
+                      console.warn("Native PiP failed:", err)
+                      // Native PiP failed - use fallback popup
+                      // Call synchronously since we're still in the click handler context
                       openPipFallback()
                     }
                   } else {
-                    // Fallback: open popup window
+                    // Fallback: open popup window immediately in click context
                     openPipFallback()
                   }
                 }
