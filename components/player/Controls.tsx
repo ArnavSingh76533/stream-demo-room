@@ -198,20 +198,9 @@ const Controls: FC<Props> = ({
           </div>
         </InteractionHandler>
 
-        {/* Bottom control cluster: progress bar on top, control buttons below */}
+        {/* Bottom control cluster: control buttons on top, progress bar below */}
         <div className="bg-dark-900/40">
-          <InputSlider
-            className={"bg-transparent"}
-            value={progress}
-            onChange={(value) => {
-              setProgress(value)
-              mouseMoved()
-            }}
-            max={duration}
-            setSeeking={setSeeking}
-            showValueHover={true}
-          />
-          <div className={"flex flex-row px-1 pb-1 items-center"}>
+          <div className={"flex flex-row px-1 py-0.5 items-center gap-0.5"}>
             {playlist.currentIndex > 0 && (
               <ControlButton
                 tooltip={"Play previous"}
@@ -269,7 +258,7 @@ const Controls: FC<Props> = ({
             />
             <ControlButton
               tooltip={"Current progress"}
-              className={"ml-auto flex items-center py-1"}
+              className={"ml-auto flex items-center py-0.5"}
               onClick={() => {
                 if (show) {
                   setShowTimePlayed(!showTimePlayed)
@@ -277,7 +266,7 @@ const Controls: FC<Props> = ({
               }}
               interaction={showControlsAction}
             >
-              <span>
+              <span className="text-sm">
                 {(showTimePlayed
                   ? secondsToTime(progress)
                   : "-" + secondsToTime(duration - progress)) +
@@ -286,7 +275,7 @@ const Controls: FC<Props> = ({
               </span>
             </ControlButton>
 
-            {/* PiP button - swapped position with Fullscreen */}
+            {/* PiP button */}
             <ControlButton
               tooltip={pipEnabled ? "Exit PiP" : "Enter PiP"}
               onClick={async () => {
@@ -408,7 +397,7 @@ const Controls: FC<Props> = ({
               <IconMusic />
             </ControlButton>
 
-            {/* Fullscreen button - swapped position with PiP */}
+            {/* Fullscreen button */}
             <ControlButton
               tooltip={fullscreen ? "Leave fullscreen" : "Enter fullscreen"}
               onClick={async () => {
@@ -441,6 +430,18 @@ const Controls: FC<Props> = ({
               {fullscreen ? <IconCompress /> : <IconExpand />}
             </ControlButton>
           </div>
+          {/* Progress bar at bottom */}
+          <InputSlider
+            className={"bg-transparent pb-1"}
+            value={progress}
+            onChange={(value) => {
+              setProgress(value)
+              mouseMoved()
+            }}
+            max={duration}
+            setSeeking={setSeeking}
+            showValueHover={true}
+          />
         </div>
       </InteractionHandler>
 
